@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "start:api": "nodemon ./apps/api/main.js",
+    "start:handler": "nodemon ./apps/handler/main.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "moment": "^2.29.4",
+    "mongoose": "^8.0.3",
+    "nats": "^2.18.0",
+    "redis": "^4.6.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
