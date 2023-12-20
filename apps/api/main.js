@@ -2,13 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const moment = require('moment');
 const mongoose = require('mongoose');
+const { connect, StringCodec } = require('nats');
 
 const { getByPeriod } = require('../../libs/database/metrics.model');
-const { getCacheKey } = require('../../libs/utils')
+const { getCacheKey, subscribes } = require('../../libs/utils')
 
 const { PORT, MONGO_URI, REDIS_URI, NATS_URI } = process.env;
 
 const cache = {};
+let nc;
+const parser = StringCodec();
 
 // app initialization
 const app = express();
@@ -36,9 +39,7 @@ app.get('/metrics', async (req, res) => {
         } else {
             const rawData = await getByPeriod(inputParams);
             data = JSON.stringify(rawData);
-            if(useCache !== 'false') {
-                cache[cacheKey] = data;
-            }
+            cache[cacheKey] = data;
         }
         res.status(200).send(JSON.stringify({ usedCache, data }));
     } catch (error) {
@@ -48,8 +49,11 @@ app.get('/metrics', async (req, res) => {
 
 app.post('/metrics', async (req, res) => {
     try {
-        const body = req.body;
-        // set to nats
+        const { time, data } = req.body;
+        nc.publish(subscribes.METRICS_SAVE, parser.encode(JSON.stringify({ 
+            time: moment(time).toDate().toString(),
+            data,
+        })));
         res.status(201).send('ok')
     } catch (error) {
         console.log(error);
@@ -59,9 +63,10 @@ app.post('/metrics', async (req, res) => {
 (async () => {
     await mongoose.connect(MONGO_URI);
     console.log('Connected to mongo');
-    // await mongoose.connect(MONGO_URI);
-    // console.log('Connected to nats');
-    // await mongoose.connect(MONGO_URI);
+
+    nc = await connect({ servers: [NATS_URI] });
+    console.log('Connected to NATS subscriber success');
+    // await mongoose.connect(REDIS_URI);
     // console.log('Connected to redis');
     app.listen(PORT, async () => {
         console.log(`Server is up and Running at PORT : ${PORT}`)

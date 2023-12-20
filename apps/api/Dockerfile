@@ -2,6 +2,6 @@ FROM node:18
 WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install
-COPY . ./apps/api/
+COPY ./ ./
 EXPOSE 9074
-CMD [ "node", "main.js" ]
+CMD [ "node", "./apps/api/main.js" ]

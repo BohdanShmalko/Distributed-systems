@@ -2,4 +2,11 @@ const getCacheKey = ({ startDate, endDate, format }) => {
     return `${startDate}-${endDate}-${format}`;
 }
 
-module.exports = { getCacheKey };
+const subscribes = {
+    METRICS_SAVE: 'metricsSave',
+}
+
+module.exports = { 
+    getCacheKey,
+    subscribes,
+};
