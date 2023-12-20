@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start:api": "nodemon ./apps/api/main.js",
-    "start:handler": "nodemon ./apps/handler/main.js"
+    "start:handler": "nodemon ./apps/handler/main.js",
+    "metrics": "node ./createMetrics"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
@@ -12,6 +13,7 @@
     "redis": "^4.6.12"
   },
   "devDependencies": {
+    "axios": "^1.6.2",
     "nodemon": "^3.0.2"
   }
 }

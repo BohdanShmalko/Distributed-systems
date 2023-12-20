@@ -22,7 +22,7 @@ app.use(express.json())
 
 // routes
 
-// http://localhost:9091/metrics?start=2023-09-17&end=2023-10-18&format=%Y-%m-%dT%H:%M:%S&useCache=true
+// http://node-01.shmal.store/api/metrics?start=2023-12-20T10:25:06&end=2023-12-20T10:28:43&format=%Y-%m-%dT%H:%M:%S&useCache=true
 app.get('/metrics', async (req, res) => {
     try {
         const { start, end, format, useCache } = req.query;
@@ -54,7 +54,7 @@ app.post('/metrics', async (req, res) => {
     try {
         const { time, data } = req.body;
         nc.publish(subscribes.METRICS_SAVE, parser.encode(JSON.stringify({ 
-            time: moment(time).toDate().toString(),
+            time,
             data,
         })));
         res.status(201).send('ok')
@@ -68,7 +68,7 @@ app.post('/metrics', async (req, res) => {
     console.log('Connected to mongo');
 
     nc = await connect({ servers: [NATS_URI] });
-    console.log('Connected to NATS subscriber success');
+    console.log('Connected to NATS publisher success');
     
     redisClient = await createClient({ url: REDIS_URI })
         .on('error', err => console.log('Redis Client Error', err))
