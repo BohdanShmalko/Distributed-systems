@@ -3,13 +3,14 @@ const express = require('express');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const { connect, StringCodec } = require('nats');
+const { createClient  } = require('redis');
 
 const { getByPeriod } = require('../../libs/database/metrics.model');
 const { getCacheKey, subscribes } = require('../../libs/utils')
 
-const { PORT, MONGO_URI, REDIS_URI, NATS_URI } = process.env;
+const { PORT, MONGO_URI, REDIS_URI, NATS_URI, REDIS_TTL } = process.env;
 
-const cache = {};
+let redisClient;
 let nc;
 const parser = StringCodec();
 
@@ -31,17 +32,19 @@ app.get('/metrics', async (req, res) => {
             format, //%Y-%m-%dT%H:%M:%S.%LZ
         };
         const cacheKey = getCacheKey(inputParams);
-        let usedCache = false;
-        let data;
-        if(cacheKey in cache && useCache !== 'false') {
-            usedCache = true;
-            data = cache[cacheKey];
-        } else {
-            const rawData = await getByPeriod(inputParams);
-            data = JSON.stringify(rawData);
-            cache[cacheKey] = data;
+        
+        if(useCache !== 'false') {
+            const cachedData = await redisClient.get(cacheKey);
+            if(cachedData) {
+                res.status(200).send(JSON.stringify({ usedCache: true, data: JSON.parse(cachedData) }));
+                return;
+            }
         }
-        res.status(200).send(JSON.stringify({ usedCache, data }));
+
+        const data = await getByPeriod(inputParams);
+        await redisClient.setex(cacheKey, REDIS_TTL ? Number(REDIS_TTL) : 3600, JSON.stringify(data));
+        res.status(200).send(JSON.stringify({ usedCache: false, data }));
+        
     } catch (error) {
         console.log(error);
     }
@@ -66,8 +69,12 @@ app.post('/metrics', async (req, res) => {
 
     nc = await connect({ servers: [NATS_URI] });
     console.log('Connected to NATS subscriber success');
-    // await mongoose.connect(REDIS_URI);
-    // console.log('Connected to redis');
+    
+    redisClient = await createClient({ url: REDIS_URI })
+        .on('error', err => console.log('Redis Client Error', err))
+        .connect();
+    console.log('Connected to redis');
+
     app.listen(PORT, async () => {
         console.log(`Server is up and Running at PORT : ${PORT}`)
     })
