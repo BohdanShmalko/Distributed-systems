@@ -1,0 +1,53 @@
+{{- if .Values.ingress }}
+---
+{{- $serviceName := .Values.service.name | default .Values.name }}
+{{- $servicePort := .Values.service.port | default 80 }}
+{{- $ingressName := .Values.ingress.name | default .Values.name }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+  {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  generation: 1
+  managedFields:
+  - apiVersion: networking.k8s.io/v1beta1
+    fieldsType: FieldsV1
+    manager: nginx-ingress-controller
+    operation: Update
+  - apiVersion: networking.k8s.io/v1
+    fieldsType: FieldsV1
+    manager: agent
+    operation: Update
+  name: {{ $ingressName }}
+  namespace: {{.Release.Namespace}}
+spec:
+  {{- if .Values.ingress.defaultBackend }}
+  defaultBackend:
+    service:
+      name: {{ .Values.ingress.defaultBackend.name | .Values.name }}
+      port:
+        number: {{ .Values.ingress.defaultBackend.port | default 80}}
+  {{- end }}
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ $serviceName }}
+            port:
+              number: {{ $servicePort }}
+        path: {{ .Values.ingress.path | default "/" }}
+        pathType: Prefix
+  {{- if .Values.ingress.tls }}
+  tls:
+  - hosts:
+    - {{ .Values.ingress.host }}
+    secretName: {{ .Values.ingress.tls }}
+  {{- end }}
+{{- end }}

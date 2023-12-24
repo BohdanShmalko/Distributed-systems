@@ -1,0 +1,17 @@
+{{- if .Values.service }}
+---
+{{- $serviceName := .Values.service.name | default .Values.name }}
+{{- $servicePort := .Values.service.port | default 80 }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{.Release.Namespace}}
+spec:
+  ports:
+    - name: http
+      targetPort: {{ $servicePort }}
+      port: {{ $servicePort }}
+  selector:
+    app: {{ $serviceName }}
+{{- end }}

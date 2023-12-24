@@ -1,0 +1,15 @@
+name: handler
+deployment:
+  env:  
+    - name: MONGO_URI
+      valueFrom:
+        secretKeyRef:
+          key: MONGO_URI
+          name: mongo
+          optional: false
+    - name: NATS_URI
+      valueFrom:
+        secretKeyRef:
+          key: NATS_URI
+          name: nats
+          optional: false

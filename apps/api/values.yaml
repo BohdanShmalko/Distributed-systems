@@ -1,0 +1,42 @@
+name: api
+deployment:
+  hostname: node-01-shmal-store
+  port: 9091
+  env:
+    - name: PORT
+      value: '9091'     
+    - name: MONGO_URI
+      valueFrom:
+        secretKeyRef:
+          key: MONGO_URI
+          name: mongo
+          optional: false
+    - name: NATS_URI
+      valueFrom:
+        secretKeyRef:
+          key: NATS_URI
+          name: nats
+          optional: false
+    - name: REDIS_URI
+      valueFrom:
+        secretKeyRef:
+          key: REDIS_URI
+          name: redis-secrets
+          optional: false
+    - name: REDIS_TTL
+      valueFrom:
+        secretKeyRef:
+          key: REDIS_TTL
+          name: redis-secrets
+          optional: false
+
+service:
+  port: 9091
+
+ingress:
+  path: /api(/|$)(.*)
+  host: node-01.shmal.store
+  defaultBackend:
+    port: 9091
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2

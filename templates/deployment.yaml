@@ -1,0 +1,64 @@
+{{- if .Values.deployment }}
+{{- $namespace := .Release.Namespace }}
+{{- $deploymentName := .Values.deployment.name | default .Values.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 4
+  labels:
+    workload.user.cattle.io/workloadselector: apps.deployment-{{$namespace}}-{{$deploymentName}}
+  managedFields:
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    manager: agent
+    operation: Update
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    manager: kube-controller-manager
+    operation: Update
+  name: {{$deploymentName}}
+  namespace: {{$namespace}}
+spec:
+  progressDeadlineSeconds: 600
+  replicas: {{.Values.deployment.replicas | default 1}}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      workload.user.cattle.io/workloadselector: apps.deployment-{{$namespace}}-{{$deploymentName}}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{ $deploymentName }}
+        workload.user.cattle.io/workloadselector: apps.deployment-{{$namespace}}-{{$deploymentName}}
+    spec:
+      affinity: {}
+      containers:
+      - env:
+        {{- with .Values.deployment.env }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        image: {{ .Values.containerName }}
+        imagePullPolicy: {{ .Values.deployment.imagePullPolicy | default "IfNotPresent" }}
+        name: {{$deploymentName}}
+        ports:
+        - name: http
+          containerPort: {{ .Values.deployment.port | default 80}}
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      {{- if .Values.deployment.hostname }}
+      hostname: {{ .Values.deployment.hostname }}
+      {{- end }}
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+{{- end }}
