@@ -26,7 +26,7 @@ spec:
   {{- if .Values.ingress.defaultBackend }}
   defaultBackend:
     service:
-      name: {{ .Values.ingress.defaultBackend.name | .Values.name }}
+      name: {{ .Values.ingress.defaultBackend.name | default $ingressName }}
       port:
         number: {{ .Values.ingress.defaultBackend.port | default 80}}
   {{- end }}
