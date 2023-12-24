@@ -42,7 +42,9 @@ app.get('/metrics', async (req, res) => {
         }
 
         const data = await getByPeriod(inputParams);
-        await redisClient.set(cacheKey, REDIS_TTL ? Number(REDIS_TTL) : 3600, JSON.stringify(data));
+        await redisClient.set(cacheKey, JSON.stringify(data), {
+            EX: REDIS_TTL ? Number(REDIS_TTL) : 3600
+        });
         res.status(200).send(JSON.stringify({ usedCache: false, data }));
         
     } catch (error) {
